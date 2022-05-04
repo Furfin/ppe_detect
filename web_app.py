@@ -1,3 +1,4 @@
+from fileinput import filename
 import random
 import threading
 import time
@@ -6,7 +7,6 @@ import redis
 from main import CVTrackThread
 
 from flask import Flask,render_template,redirect,request
-
 
 
 exporting_threads = {}
@@ -18,7 +18,6 @@ app.debug = True
 def progress(thread_id):
     global exporting_threads
     if exporting_threads[thread_id].frames != int(exporting_threads[thread_id].totalFrames):
-        print(exporting_threads[thread_id].frames != int(exporting_threads[thread_id].totalFrames))
         return str(exporting_threads[thread_id].frames) + '/' + str(int(exporting_threads[thread_id].totalFrames))
     else:
         r = redis.Redis()
@@ -37,6 +36,8 @@ def upload_file():
    global exporting_threads
    if request.method == 'POST':
       f = request.files['file']
+      if f.filename.split(sep='.')[1] != "mp4":
+          return "Invalid file extension! Try again"
       f.save('static/' + str(f.filename))
       index = random.randint(0, 10000)
       exporting_threads[index] = CVTrackThread('static/' + str(f.filename),index)

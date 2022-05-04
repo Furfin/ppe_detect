@@ -1,5 +1,5 @@
 from ast import arg
-import threading
+
 import time
 import random
 
@@ -12,6 +12,7 @@ import tensorflow as tf
 import time
 import torch
 import redis
+import threading
 
 from human_app import get_hum
 from ppe_app import get_xyxy
@@ -30,7 +31,7 @@ class CVTrackThread(threading.Thread):
         
         self.video_path = video_path
         if self.video_path:
-                self.vid = cv2.VideoCapture(self.video_path) 
+            self.vid = cv2.VideoCapture(self.video_path) 
         else:
             self.vid = cv2.VideoCapture(0)
         
@@ -112,14 +113,7 @@ class CVTrackThread(threading.Thread):
                     
                     if not self.data.sismember("ids_"+str(self.id),str(id)):
                         self.data.sadd("ids_"+str(self.id),str(id))
-                        datastring = str(str(self.frames)) + "_" + str(str(self.frames)) + "_" + str(classs) + "_" + str(track.mean) + "_" + str(track.mean) 
-                        self.data.mset({f'data_{str(self.id)}_{str(id)}':datastring})
-                    else:
-                        datastring = self.data.get(f'data_{str(self.id)}_{str(id)}').decode('utf-8')
-                        args = list(datastring.split(sep='_'))
-                        args[1] = str(self.frames)
-                        args[2] = classs
-                        args[4] = str(track.mean)
+                        datastring = str(str(self.frames)) +"_" + str(classs) + "_" + str(track.mean) + "_" + str(track.mean) 
                         self.data.mset({f'data_{str(self.id)}_{str(id)}':datastring})
                     img = cv2.rectangle(img, (int(bb[0]), int(bb[1])), (int(bb[2]), int(bb[3])), (36+id*50,255-id*50,12+id*25), 1)
                     cv2.putText(img, f'{classs} -- {id}', (int(bb[0]), int(bb[1]) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (36+id*50,255-id*50,12+id*25), 2)
