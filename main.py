@@ -11,7 +11,6 @@ import numpy as np
 import tensorflow as tf
 import time
 import torch
-import redis
 import threading
 
 from human_app import get_hum
@@ -22,12 +21,17 @@ from deep_sort.detection import Detection
 from deep_sort.tracker import Tracker
 from tool import generate_detections as gdet
 #str(exporting_threads[thread_id].progress)
+import psycopg2
+
 
 
 class CVTrackThread(threading.Thread):
-    def __init__(self,video_path,id):
+    def __init__(self,video_path,id,db,dbmodel):
         
         print("Building class...")
+        
+        self.db = db
+        self.dbmodel = dbmodel
         
         self.video_path = video_path
         if self.video_path:
@@ -35,13 +39,13 @@ class CVTrackThread(threading.Thread):
         else:
             self.vid = cv2.VideoCapture(0)
         
-        self.frames = 0
+        self.frames = 1
         self.totalFrames = self.vid.get(cv2.CAP_PROP_FRAME_COUNT)
         self.id = id
         super().__init__()
         max_cosine_distance = 0.5
         nn_budget = None
-        
+                
         model_filename = 'model_data/mars-small128.pb'
         metric = nn_matching.NearestNeighborDistanceMetric("cosine", max_cosine_distance, nn_budget)
         self.tracker = Tracker(metric)
@@ -64,9 +68,10 @@ class CVTrackThread(threading.Thread):
         self.model = cv2.dnn_DetectionModel(self.net)
         self.model.setInputParams(scale=1 / 255, size=(416, 416), swapRB=True)
         
-        self.data = redis.Redis()
         self.time0 = time.time()
-        
+        _, img = self.vid.read()
+        self.img = cv2.imencode('.jpg', img)[1].tobytes()
+        self.img = ''
         print("Success!")
 
     def run(self):
@@ -110,14 +115,18 @@ class CVTrackThread(threading.Thread):
                         if (col1 and col2) and bbox[4] > 0.65:
                             img= cv2.rectangle(img, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])), (255,10,50), 1)
                             classs = "person_with_helmet"
-                    
-                    if not self.data.sismember("ids_"+str(self.id),str(id)):
-                        self.data.sadd("ids_"+str(self.id),str(id))
-                        datastring = str(str(self.frames)) +"_" + str(classs) + "_" + str(track.mean) + "_" + str(track.mean) 
-                        self.data.mset({f'data_{str(self.id)}_{str(id)}':datastring})
+
+                    datastring = str(str(self.frames)) +"_" + str(classs) + "_" + str(track.mean) + "_" + str(track.mean)
+                     
+                    if not self.dbmodel.query.filter_by(thread_id = self.id,track_id = id).first():
+                        self.db.session.add(self.dbmodel(self.id,id,datastring))
+                        self.db.session.commit()
                     img = cv2.rectangle(img, (int(bb[0]), int(bb[1])), (int(bb[2]), int(bb[3])), (36+id*50,255-id*50,12+id*25), 1)
                     cv2.putText(img, f'{classs} -- {id}', (int(bb[0]), int(bb[1]) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (36+id*50,255-id*50,12+id*25), 2)
+                self.img = cv2.imencode('.jpg', img)[1].tobytes()
+                
             self.frames += 1
             if self.frames >= self.totalFrames:
                 print("Success!")
+                self.img = 0
                 return 0
