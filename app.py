@@ -1,19 +1,10 @@
+import random
+
 from concurrent.futures import thread
 from fileinput import filename
-import random
-import threading
-import time
-import cv2
 from flask_sqlalchemy import SQLAlchemy
-import os
-
 from main import CVTrackThread
-from PIL import Image
-
 from flask import Flask,render_template,redirect,request, Response
-
-        # Open a cursor to perform database operations
-
 
 exporting_threads = {}
 app = Flask(__name__)
@@ -33,7 +24,6 @@ class Track(db.Model):
         self.data = data
 
 db.create_all()
-
 
 @app.route('/data/<int:thread_id>')
 def progress(thread_id):
@@ -60,7 +50,6 @@ def gen_frames(thread_id):
             yield frame
             yield b'\r\n\r\n'
 
-
 @app.route('/')
 def index():
    return render_template('upload.html')
@@ -78,17 +67,5 @@ def upload_file():
       exporting_threads[index].start()
       return redirect('/' + str(index))
 
-		
 if __name__ == '__main__':
    app.run(debug = True)
-   
-
-"""
-track = CVTrackThread("static/vid2.mp4",random.randint(0, 10000))
-
-track.start()
-
-while True:
-    time.sleep(1)
-    print(track.frames,track.totalFrames)
-"""

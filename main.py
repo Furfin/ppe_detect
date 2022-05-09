@@ -1,7 +1,6 @@
 from ast import arg
 
 import time
-import random
 
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
@@ -13,16 +12,13 @@ import time
 import torch
 import threading
 
-from human_app import get_hum
-from ppe_app import get_xyxy
+from tool.human_app import get_hum
+from tool.ppe_app import get_xyxy
 
 from deep_sort import nn_matching
 from deep_sort.detection import Detection
 from deep_sort.tracker import Tracker
 from tool import generate_detections as gdet
-#str(exporting_threads[thread_id].progress)
-import psycopg2
-
 
 
 class CVTrackThread(threading.Thread):
@@ -130,3 +126,4 @@ class CVTrackThread(threading.Thread):
                 print("Success!")
                 self.img = 0
                 return 0
+            
