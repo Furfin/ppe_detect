@@ -1,10 +1,15 @@
 import random
+
+from concurrent.futures import thread
+from fileinput import filename
 from flask_sqlalchemy import SQLAlchemy
 from main import CVTrackThread
 from flask import Flask,render_template,redirect,request, Response
 
 exporting_threads = {}
 app = Flask(__name__)
+
+app.debug = True
 app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://postgres:postgres@db:5432/postgres"
 db = SQLAlchemy(app)
 
@@ -40,6 +45,31 @@ def gen_data(thread_id):
             yield data + "<br>"
     yield f"<a href = /video/{thread_id}>Video</a>"
 
+@app.route('/data/<int:thread_id>')
+def progress(thread_id):
+    data = ''
+    for track in Track.query.filter_by(thread_id = thread_id):
+        data += str(track.data) + '</br>'
+    return data+'!'
+
+@app.route('/feed/<int:thread_id>')
+def feed(thread_id):
+        return Response(gen_frames(thread_id),mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@app.route('/<int:thread_id>')
+def output(thread_id):
+    return render_template('index.html',thread = thread_id)
+
+def gen_frames(thread_id):
+    while True:
+        frame = exporting_threads[thread_id].img
+        if frame == 0:
+            break
+        else:
+            yield b'--frame\r\nContent-Type: image/jpeg\r\n\r\n'
+            yield frame
+            yield b'\r\n\r\n'
+            
 @app.route('/')
 def index():
    return render_template('upload.html')
@@ -51,7 +81,9 @@ def upload_file():
       f = request.files['file']
       if f.filename.split(sep='.')[1] != "mp4":
           return "Invalid file extension! Try again"
+
       f.save("static/"+str(f.filename))
+      f.save('static/' + str(f.filename))
       index = random.randint(0, 10000)
       exporting_threads[index] = CVTrackThread('static/' + str(f.filename),index,db,Track)
       exporting_threads[index].start()

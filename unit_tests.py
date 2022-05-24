@@ -5,6 +5,11 @@ from main import *
 
 client = app.test_client()
 
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> 6ebe1574b3f0a8ba56f13a7527d0ef44ef1f625f
 class TestMainClassInit(unittest.TestCase):
     
     def test_init(self):
@@ -17,9 +22,17 @@ class TestWebApp(unittest.TestCase):
         object = Track(0,0,'')
         self.assertIsInstance(object, Track, "DB model object is initialized")
     
+<<<<<<< HEAD
+=======
+    
+>>>>>>> 6ebe1574b3f0a8ba56f13a7527d0ef44ef1f625f
     def test_get(self):
         resp = client.get("/")
         self.assertEqual(resp._status_code,200)
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 6ebe1574b3f0a8ba56f13a7527d0ef44ef1f625f
 if __name__ == '__main__':
     unittest.main()
