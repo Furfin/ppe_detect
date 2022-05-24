@@ -4,12 +4,10 @@ from concurrent.futures import thread
 from fileinput import filename
 from flask_sqlalchemy import SQLAlchemy
 from main import CVTrackThread
-from flask import Flask,render_template,redirect,request, Response
+from flask import Flask,render_template,redirect,request, Response, url_for
 
 exporting_threads = {}
 app = Flask(__name__)
-
-app.debug = True
 app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://postgres:postgres@db:5432/postgres"
 db = SQLAlchemy(app)
 
@@ -18,12 +16,12 @@ class Track(db.Model):
     thread_id = db.Column(db.Integer,nullable=False)
     track_id = db.Column(db.Integer, nullable=False)
     data = db.Column(db.String(500), nullable=False)
-
+    
     def __init__(self, thread_id, track_id,data):
         self.thread_id = thread_id
         self.track_id = track_id
         self.data = data
-
+        
 db.create_all()
 
 @app.route('/video/<thread_id>')
@@ -56,9 +54,7 @@ def upload_file():
       f = request.files['file']
       if f.filename.split(sep='.')[1] != "mp4":
           return "Invalid file extension! Try again"
-
       f.save("static/"+str(f.filename))
-      f.save('static/' + str(f.filename))
       index = random.randint(0, 10000)
       exporting_threads[index] = CVTrackThread('static/' + str(f.filename),index,db,Track)
       exporting_threads[index].start()

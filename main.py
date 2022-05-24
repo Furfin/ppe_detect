@@ -84,7 +84,7 @@ class CVTrackThread(threading.Thread):
         while True:
             _, img = self.vid.read()
             
-            if self.frames%5 == 0:
+            if self.frames%10 == 0:
                 boxes, scores, names = [],[],[]
                 for bb in get_hum(img,self.model):
                     boxes.append(bb[2])
@@ -120,6 +120,7 @@ class CVTrackThread(threading.Thread):
                             classs = "person_with_helmet"
 
                     datastring = str(str(self.frames)) +"_" + str(classs) + "_" + str(track.mean) + "_" + str(track.mean)
+                     
                     if not self.dbmodel.query.filter_by(thread_id = self.id,track_id = id).first():
                         self.db.session.add(self.dbmodel(self.id,id,datastring))
                         self.db.session.commit()
