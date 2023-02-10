@@ -1,5 +1,7 @@
 # ppe_detect
 detecting ppe on human beings Using YOLO and DeepSort
+![](https://github.com/Furfin/ppe_detect/blob/master/templates/123.gif)
+
 
 # Установка
 
